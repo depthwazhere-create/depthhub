@@ -1,0 +1,195 @@
+-- Depth Hub prank:
+--   1. Small centered dialog titled "Depth Hub"
+--   2. "100% completed  press load the script"
+--   3. Button "Load Script" — actually kicks you with the ban message
+
+local Players              = game:GetService("Players")
+local TweenService         = game:GetService("TweenService")
+local ContextActionService = game:GetService("ContextActionService")
+local RunService           = game:GetService("RunService")
+
+------------------------------------------------------------
+-- STEP 1: Destroy every previous copy from every parent
+------------------------------------------------------------
+for _, p in ipairs({
+    game:GetService("CoreGui"),
+    Players.LocalPlayer:FindFirstChild("PlayerGui"),
+    (gethui and gethui()) or nil,
+}) do
+    if p then
+        for _, c in ipairs(p:GetDescendants()) do
+            if c.Name == "FakeKickScreen" then c:Destroy() end
+        end
+    end
+end
+
+local parent = (gethui and gethui())
+    or Players.LocalPlayer:FindFirstChild("PlayerGui")
+    or game:GetService("CoreGui")
+
+------------------------------------------------------------
+-- Config
+------------------------------------------------------------
+local TITLE_TEXT  = "Depth Hub"
+local TOP_MESSAGE = "100% completed  press load the script"
+local BAN_MESSAGE = "You have been permanently banned from this experience."
+local ERROR_CODE  = "Error Code: 832"
+local BUTTON_TEXT = "Load Script"
+
+------------------------------------------------------------
+-- GUI
+------------------------------------------------------------
+local gui = Instance.new("ScreenGui")
+gui.Name = "FakeKickScreen"
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 999999
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = parent
+
+-- Freeze movement while screen is up
+local function freezeChar(char)
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = 0
+        hum.JumpPower = 0
+        hum.JumpHeight = 0
+    end
+end
+if Players.LocalPlayer.Character then freezeChar(Players.LocalPlayer.Character) end
+Players.LocalPlayer.CharacterAdded:Connect(freezeChar)
+
+local conn
+conn = RunService.RenderStepped:Connect(function()
+    if not gui.Parent then conn:Disconnect() return end
+    local char = Players.LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.WalkSpeed = 0; hum.JumpPower = 0; hum.JumpHeight = 0 end
+    end
+end)
+
+for _, action in ipairs({
+    "jumpAction", "moveForwardAction", "moveBackwardAction",
+    "moveLeftAction", "moveRightAction",
+    "forward", "backward", "left", "right", "jump",
+}) do
+    ContextActionService:BindAction(
+        "Block_" .. action,
+        function() return Enum.ContextActionResult.Sink end,
+        false,
+        unpack(Enum.PlayerActions:GetEnumItems())
+    )
+end
+
+-- Single centered dialog box
+local dialog = Instance.new("TextButton")
+dialog.Name = "Dialog"
+dialog.AnchorPoint = Vector2.new(0.5, 0.5)
+dialog.Position = UDim2.fromScale(0.5, 0.5)
+dialog.Size = UDim2.new(0, 520, 0, 0)
+dialog.AutomaticSize = Enum.AutomaticSize.Y
+dialog.BackgroundColor3 = Color3.fromRGB(57, 57, 57)
+dialog.BorderSizePixel = 0
+dialog.Text = ""
+dialog.AutoButtonColor = false
+dialog.Modal = true
+dialog.Parent = gui
+
+local pad = Instance.new("UIPadding")
+pad.PaddingTop    = UDim.new(0, 28)
+pad.PaddingBottom = UDim.new(0, 28)
+pad.PaddingLeft   = UDim.new(0, 32)
+pad.PaddingRight  = UDim.new(0, 32)
+pad.Parent = dialog
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 16)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Parent = dialog
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = TITLE_TEXT
+title.TextColor3 = Color3.fromRGB(240, 240, 240)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 34
+title.LayoutOrder = 1
+title.Parent = dialog
+
+-- Divider
+local divider = Instance.new("Frame")
+divider.Size = UDim2.new(1, 0, 0, 1)
+divider.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+divider.BorderSizePixel = 0
+divider.LayoutOrder = 2
+divider.Parent = dialog
+
+-- Top message
+local topMsg = Instance.new("TextLabel")
+topMsg.Size = UDim2.new(1, 0, 0, 0)
+topMsg.AutomaticSize = Enum.AutomaticSize.Y
+topMsg.BackgroundTransparency = 1
+topMsg.Text = TOP_MESSAGE
+topMsg.TextColor3 = Color3.fromRGB(200, 200, 200)
+topMsg.Font = Enum.Font.Gotham
+topMsg.TextSize = 22
+topMsg.TextWrapped = true
+topMsg.LayoutOrder = 3
+topMsg.Parent = dialog
+
+-- Spacer
+local spacer = Instance.new("Frame")
+spacer.Size = UDim2.new(1, 0, 0, 40)
+spacer.BackgroundTransparency = 1
+spacer.LayoutOrder = 4
+spacer.Parent = dialog
+
+-- Error code
+local errCode = Instance.new("TextLabel")
+errCode.Size = UDim2.new(1, 0, 0, 22)
+errCode.BackgroundTransparency = 1
+errCode.Text = ERROR_CODE
+errCode.TextColor3 = Color3.fromRGB(170, 170, 170)
+errCode.Font = Enum.Font.Gotham
+errCode.TextSize = 18
+errCode.LayoutOrder = 5
+errCode.Parent = dialog
+
+-- Load Script button
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1, 0, 0, 62)
+button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+button.BorderSizePixel = 0
+button.Text = BUTTON_TEXT
+button.TextColor3 = Color3.fromRGB(30, 30, 30)
+button.Font = Enum.Font.GothamMedium
+button.TextSize = 24
+button.AutoButtonColor = false
+button.LayoutOrder = 6
+button.Parent = dialog
+
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 10)
+btnCorner.Parent = button
+
+local hoverIn  = TweenService:Create(button, TweenInfo.new(0.12), { BackgroundColor3 = Color3.fromRGB(230, 230, 230) })
+local hoverOut = TweenService:Create(button, TweenInfo.new(0.12), { BackgroundColor3 = Color3.fromRGB(255, 255, 255) })
+button.MouseEnter:Connect(function() hoverIn:Play() end)
+button.MouseLeave:Connect(function() hoverOut:Play() end)
+
+------------------------------------------------------------
+-- Button: actually kicks you
+------------------------------------------------------------
+local clicked = false
+button.MouseButton1Click:Connect(function()
+    if clicked then return end
+    clicked = true
+    button.Text = "Loading..."
+    button.Active = false
+    task.wait(0.3)
+    Players.LocalPlayer:Kick(BAN_MESSAGE .. "\n\n" .. ERROR_CODE)
+end)
